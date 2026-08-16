@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#050606">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AFTER 02:17">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik+Glitch&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<title>AFTER 02:17 — Chapter 1: The Room</title>
+</head>
+<body>
+<div id="portraitBlocker" class="deviceBlocker">
+  <div class="deviceCard"><div class="rotateGlyph">↻</div><h2>Поверните iPhone</h2><p>AFTER 02:17 работает только горизонтально.</p></div>
+</div>
+<div id="touchOnlyBlocker" class="deviceBlocker hidden nonios">
+  <div class="deviceCard"><div class="phoneGlyph">▯</div><h2>iOS build</h2><p>Эта версия спроектирована только для iPhone/iPad с сенсорным управлением.</p></div>
+</div>
+
+<main id="app">
+<section id="menu" class="screen active menuScreen">
+  <div class="menuBackdrop"></div><div class="menuNoise"></div>
+  <div class="menuContent">
+    <div class="eyebrow">PLAY AND END · MOBILE HORROR</div>
+    <h1>AFTER <span>02:17</span></h1>
+    <div class="tagline">CHAPTER 1 · THE ROOM</div>
+    <p class="subtitle">02:17. Свет погас. Комната больше не пустая.</p>
+    <div class="menuButtons">
+      <button id="continueBtn" class="button primary hidden">Продолжить</button>
+      <button id="newGameBtn" class="button primary">Новая игра</button>
+      <button id="settingsBtn" class="button">Настройки</button>
+      <button id="creditsBtn" class="button ghost">О проекте</button>
+    </div>
+    <div class="menuSoundHint" id="menuSoundHint">КОСНИТЕСЬ ЭКРАНА · ВКЛЮЧИТЬ ЗВУК</div>
+    <div class="buildMark">VERSION 1.0 · CHAPTER 1 · iOS LANDSCAPE</div>
+  </div>
+</section>
+
+<section id="settings" class="screen panelScreen">
+ <div class="panel">
+  <header><button class="backBtn" data-back>←</button><div><div class="eyebrow">ПАРАМЕТРЫ</div><h2>Настройки</h2></div></header>
+  <div class="settingsList">
+   <label><span><b>Чувствительность</b><small>Скорость свайпа камеры</small></span><input id="sensitivity" type="range" min="0.55" max="1.8" step="0.05"></label>
+   <label><span><b>Громкость</b><small>Фоновый гул и события</small></span><input id="volume" type="range" min="0" max="1" step="0.05"></label>
+   <label><span><b>Качество</b><small>Внутреннее разрешение WebGL</small></span><select id="quality"><option value="0.7">Экономия</option><option value="0.9">Баланс</option><option value="1">Высокое</option></select></label>
+   <label><span><b>Размер интерфейса</b><small>Кнопки и HUD</small></span><input id="uiScale" type="range" min="0.9" max="1.2" step="0.05"></label>
+   <label><span><b>Плёночное зерно</b><small>Визуальный шум</small></span><input id="grain" type="checkbox"></label>
+  </div>
+  <button id="resetSettings" class="button ghost danger">Сбросить</button>
+ </div>
+</section>
+
+<section id="credits" class="screen panelScreen">
+ <div class="panel aboutPanel">
+  <header><button class="backBtn" data-back>←</button><div><div class="eyebrow">AFTER 02:17</div><h2>Chapter 1: The Room</h2></div></header>
+  <p>Первая версия первой главы мобильного 3D-хоррора. Вся игровая логика, WebGL-рендер, модели и текстуры запускаются из файлов проекта.</p>
+  <p>Материалы окружения — локальные оптимизированные CC0-текстуры Poly Haven. Мебель и техника — локальные OBJ-модели из Kenney Furniture Kit (CC0). Монстр «Оператор» — оригинальная игровая модель: рабочий комбинезон использует CC0-ткань Poly Haven, индустриальная маска — CC0-металл, а CRT-лицо имеет процедурные слабые помехи.</p>
+  <div class="notice">На iPhone используйте Safari в горизонтальной ориентации и наушники.</div>
+ </div>
+</section>
+
+<section id="game" class="screen gameScreen">
+ <canvas id="glCanvas"></canvas>
+ <div id="fx"><div id="vignette"></div><div id="grainLayer"></div><div id="flash"></div></div>
+ <div id="hud">
+   <div class="hudTop"><button id="pauseBtn" class="hudBtn">Ⅱ</button><div id="objective">Осмотритесь в комнате</div></div>
+   <div id="inventory"></div>
+   <div id="reticle"><i></i></div>
+   <div id="focusLabel"></div>
+   <div id="toast"></div>
+   <div id="leftZone" class="touchZone"><div id="stick"><div id="stickKnob"></div></div></div>
+   <div id="lookZone" class="touchZone"></div>
+   <button id="actionBtn" class="actionBtn"><span>ДЕЙСТВИЕ</span></button>
+ </div>
+
+ <div id="introOverlay" class="overlay hidden"><div class="card introCard"><div class="eyebrow">CHAPTER 1 · 02:17</div><h2>Вы проснулись от щелчка.</h2><p>Свет не работает. Дверь заперта. Телефон исчез. В комнате кто-то переставил мебель.</p><button id="enterRoomBtn" class="button primary">Осмотреться</button></div></div>
+ <div id="pauseOverlay" class="overlay hidden"><div class="card stack"><div class="eyebrow">ПАУЗА</div><h2>Комната ждёт.</h2><button id="resumeBtn" class="button primary">Продолжить</button><button id="pauseSettingsBtn" class="button">Настройки</button><button id="exitBtn" class="button ghost">В главное меню</button></div></div>
+
+ <div id="keypadOverlay" class="overlay hidden"><div class="card keypadCard"><div class="eyebrow">ШКАФЧИК</div><h2>Четыре цифры</h2><div id="keypadDisplay">––––</div><div id="keypadGrid" class="keypadGrid"></div><button id="keypadClose" class="button ghost">Закрыть</button></div></div>
+
+ <div id="circuitOverlay" class="overlay hidden"><div class="card circuitCard"><div class="eyebrow">ЭЛЕКТРОЩИТОК</div><h2>Замкните цепь</h2><p>Проведите линию от <b>IN</b> к <b>OUT</b> через активные контакты. По диагонали ток не идёт.</p><div id="circuitBoard" class="circuitBoard"></div><div id="circuitStatus">Проведите пальцем по контактам.</div><button id="circuitReset" class="button">Сбросить путь</button><button id="circuitClose" class="button ghost">Закрыть</button></div></div>
+
+ <div id="computerOverlay" class="overlay hidden"><div class="crtWindow"><div class="crtBar">MEGA-OS // SECURITY TERMINAL 03</div><div class="crtText"><p>&gt; POWER RESTORED</p><p>&gt; LAST ACCESS 02:17</p><p>&gt; PANEL AUTH SEQUENCE:</p><div class="symbols">○ &nbsp; △ &nbsp; □</div><p class="muted">Если дверь не слушает ключ — сначала заставьте стену вспомнить.</p><p class="blink">_</p></div><button id="computerClose" class="crtButton">ЗАКРЫТЬ</button></div></div>
+
+ <div id="symbolOverlay" class="overlay hidden"><div class="card symbolCard"><div class="eyebrow">СТЕННАЯ ПАНЕЛЬ</div><h2>Три символа</h2><div id="symbolInput" class="symbolInput">· · ·</div><div class="symbolButtons"><button data-symbol="circle">○</button><button data-symbol="triangle">△</button><button data-symbol="square">□</button></div><button id="symbolReset" class="button">Сбросить</button><button id="symbolClose" class="button ghost">Закрыть</button></div></div>
+
+
+ <div id="caughtOverlay" class="overlay hidden"><div class="ending"><div class="eyebrow">ОПЕРАТОР</div><h2>Он догнал вас.</h2><p>Комната вернула вас к моменту перед дверью.</p><button id="caughtRetryBtn" class="button primary">Попробовать снова</button></div></div>
+ <div id="endingOverlay" class="overlay hidden"><div class="ending"><div class="timeEnd">02:18</div><div class="eyebrow">КОНЕЦ CHAPTER 1</div><h2>Дверь открылась.</h2><p>За ней был коридор, которого раньше не существовало.<br>А позади снова включилось радио.</p><button id="endingMenuBtn" class="button primary">В главное меню</button></div></div>
+</section>
+</main>
+<script src="models.js"></script>
+<script src="kenney_meshes.js"></script>
+<script src="engine.js"></script>
+</body>
+</html>

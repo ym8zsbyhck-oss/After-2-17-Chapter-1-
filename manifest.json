@@ -1,0 +1,55 @@
+{
+  "runtime_network_dependencies": [],
+  "title": "AFTER 02:17 — Chapter 1: The Room",
+  "target": "iOS Safari landscape",
+  "puzzles": [
+    "02:17 observation/code",
+    "electrical touch circuit",
+    "CRT symbol transfer",
+    "symbol panel",
+    "crank/mechanical lock",
+    "escape chase"
+  ],
+  "monster": "The Operator / Оператор",
+  "imported_kenney_obj": [
+    "chair.obj",
+    "desk.obj",
+    "computerScreen.obj",
+    "bookcaseOpen.obj",
+    "radio.obj",
+    "computerKeyboard.obj",
+    "computerMouse.obj",
+    "lampRoundFloor.obj"
+  ],
+  "local_models": [
+    "sofa",
+    "cabinet",
+    "fusebox",
+    "symbolPanel",
+    "door",
+    "clock",
+    "key",
+    "crank",
+    "crankSocket",
+    "operator",
+    "boxStack"
+  ],
+  "textures": [
+    "wall.webp",
+    "floor.webp",
+    "wood.webp",
+    "metal.webp",
+    "leather.webp",
+    "carpet.webp",
+    "fabric.webp"
+  ],
+  "version": "1.0",
+  "audio": [
+    "menu_click.mp3 — user supplied menu UI sound"
+  ],
+  "monster_materials": [
+    "fabric.webp — Poly Haven Cotton Jersey CC0",
+    "metal.webp — Poly Haven Green Metal Rust CC0",
+    "CRT face — procedural WebGL flicker/no bitmap texture"
+  ]
+}
