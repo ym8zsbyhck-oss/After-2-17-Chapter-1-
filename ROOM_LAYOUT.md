@@ -1,47 +1,13 @@
-# Room layout — v1.1
+# AFTER 02:17 v1.2 — physical room layout
 
-The room is intentionally designed as one believable employee-security room rather than a random prop field.
+North wall: service door in the center, **real analog clock at 02:17** left of it, coded maintenance locker right of it.
 
-## North wall (exit / first clue)
-- Center: locked service door.
-- Left of door: wall clock stopped at 02:17.
-- Right corner: coded maintenance locker.
+East wall: fusebox with visible breakers/fuse socket; emergency symbol panel with a tray that physically extends.
 
-## East wall (maintenance)
-- Fuse box.
-- Emergency symbol panel.
-- Service tray that releases the crank after the symbol puzzle.
+South-west: security desk, chair, keyboard/mouse, CRT terminal.
 
-## South-west (security workstation)
-- Wooden desk against the wall.
-- CRT security terminal on the desk.
-- Keyboard and mouse on the desk.
-- Chair in front of the workstation; it moves after the CRT event.
+West side: archive shelf, radio, manual crank socket and a separate metal hidden compartment containing the key.
 
-## West wall (archive)
-- Bookcase/archive shelf.
-- Radio located on the shelf side.
-- Manual crank socket farther toward the exit side.
-- Hidden key compartment revealed after using the crank.
+South-east: waiting sofa, carpet, floor lamp.
 
-## South-east (waiting area)
-- Sofa against the wall.
-- Floor lamp beside it.
-- Dirty rug beneath the seating zone.
-
-## North-east (storage)
-- Cardboard box stack separated from the main walking route.
-
-## Collision design
-
-The player has a collision radius and cannot pass through:
-- walls;
-- desk;
-- chair (including its moved position);
-- sofa;
-- archive bookcase;
-- maintenance locker;
-- box stack;
-- floor lamp.
-
-The Operator uses the same collision field and tries alternate steering angles when furniture blocks the direct route.
+The center remains a clear walking route and major furniture uses collision rectangles.

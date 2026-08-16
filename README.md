@@ -1,38 +1,32 @@
-# AFTER 02:17 — Chapter 1: The Room — v1.1
+# AFTER 02:17 — Chapter 1: The Room — v1.2
 
-iOS-landscape 3D horror puzzle, prepared as a flat GitHub Pages build: all files remain in the repository root.
+Flat GitHub Pages build for iPhone/iPad landscape. No folders are required.
 
-## Main v1.1 changes
+## What v1.2 fixes
 
-- Rebuilt the room as a coherent employee-security / break room.
-- Added player-radius collision against walls and major furniture.
-- Added collision-aware Operator movement.
-- Fixed camera touch direction: swipe right = look right; swipe up = look up.
-- Replaced generic floor/walls with a curated worn toy-factory-inspired palette: aged cream plaster, turquoise service metal, red/yellow safety accents and tiled floor.
-- Added local CC0 texture categories for floor, walls, ceiling, metal accents, rubber, cardboard, wood, upholstery, carpet and Operator clothing.
-- Added animated **CURRENT OBJECTIVE / ТЕКУЩАЯ ЦЕЛЬ** panel with a title and contextual next step.
-- Expanded electrical puzzle to a 4x4 touch circuit with two required relay contacts.
-- Kept iOS touch-only controls and landscape safe areas.
+- Fixed the real camera inversion bug: the view matrix and movement now use the same yaw direction.
+- Replaced raw iOS touch deltas with pointer-captured, normalized camera control plus light smoothing.
+- Added a joystick dead-zone so the player does not drift from tiny thumb movement.
+- Story props are now physical 3D objects rather than proxy blocks: wall clock, maintenance locker/keypad, fuse, fusebox/breakers, symbol panel/tray, crank, archive shutter/compartment, key and industrial service door.
+- The clock face is modeled with 12 tick marks and hands physically set to **02:17**.
+- Entering 0217 now opens the locker; the fuse remains visible in the locker until the player picks it up.
+- The fuse must then be physically installed in the fusebox before the circuit puzzle starts.
+- Solving the symbol panel physically extends a tray containing the crank.
+- Using the crank opens a visible metal archive compartment containing the key.
+- Added dedicated local CC0 materials for weathered archive wood and the rusty archive shutter.
+- All existing room/furniture collision remains enabled.
 
-## iPhone controls
+## iOS controls
 
-- Left thumb: virtual stick, natural movement relative to camera.
-- Right thumb: swipe to look around.
-  - Swipe right -> camera turns right.
-  - Swipe up -> camera looks up.
-- `ДЕЙСТВИЕ`: interact with the focused object.
+- Left side: floating joystick. A small dead-zone prevents accidental movement.
+- Right side: drag to look. Right = right, left = left, up = up, down = down.
+- Camera input is normalized to screen size and lightly smoothed.
+- `ДЕЙСТВИЕ`: interact with the object under the reticle.
+
+## Story path
+
+Clock 02:17 → code 0217 → locker opens → physically pick up fuse → physically install fuse → circuit → CRT → symbol panel → tray/crank → archive mechanism → compartment opens → key → Operator chase → service door.
 
 ## GitHub Pages
 
-Upload every file from the ZIP to the repository root. `index.html` must remain in the root.
-
-Pages settings:
-- Source: Deploy from a branch
-- Branch: `main`
-- Folder: `/ (root)`
-
-## Core progression
-
-Clock 02:17 -> maintenance locker -> fuse -> 4x4 power circuit -> CRT terminal -> symbol panel -> crank -> archive mechanism -> key -> Operator chase -> service door.
-
-See `ROOM_LAYOUT.md` for the intended room plan and `ASSET_LICENSES.md` for the local material sources.
+Upload every file from the ZIP directly into the repository root. Set Pages to `main` + `/ (root)`.

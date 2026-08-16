@@ -2,7 +2,7 @@
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const screens={menu:$('#menu'),settings:$('#settings'),credits:$('#credits'),game:$('#game')};
-const SAVE='after0217_ch1_v1_1_save', SET='after0217_ch1_v1_settings';
+const SAVE='after0217_ch1_v1_2_save', SET='after0217_ch1_v1_settings';
 const memStore={};const store={get(k){try{return localStorage.getItem(k)}catch{return memStore[k]??null}},set(k,v){try{localStorage.setItem(k,v)}catch{memStore[k]=v}},remove(k){try{localStorage.removeItem(k)}catch{delete memStore[k]}}};
 const defaults={sensitivity:1,volume:.72,quality:.9,uiScale:1,grain:true};
 let settings=load(SET,defaults),settingsReturn='menu';
@@ -54,8 +54,8 @@ function scrape(){if(!ac)return;const n=Math.floor(ac.sampleRate*.5),b=ac.create
 
 // ---------- minimal local WebGL renderer ----------
 const canvas=$('#glCanvas');let gl,program,bufCube,bufCyl,textures={},importedBuffers={},running=false,paused=true,last=0;
-const player={x:0,z:2.55,yaw:0,pitch:0}, move={x:0,y:0};
-const flags0={clock:false,cabinet:false,fuse:false,circuit:false,powered:false,computer:false,symbols:false,crank:false,shutter:false,radio:false,key:false,ended:false};let flags={...flags0};
+const player={x:0,z:2.55,yaw:0,pitch:0}, move={x:0,y:0};let lookTargetYaw=0,lookTargetPitch=0;function syncLookTarget(){lookTargetYaw=player.yaw;lookTargetPitch=player.pitch}
+const flags0={clock:false,cabinet:false,fuse:false,fuseInserted:false,circuit:false,powered:false,computer:false,symbols:false,crank:false,shutter:false,radio:false,key:false,ended:false};let flags={...flags0};
 let current=null,chairX=-3.0,chairMoved=false;
 const monster={active:false,preview:false,x:4.55,z:3.35,yaw:0,speed:1.08};
 
@@ -67,21 +67,22 @@ const monster={active:false,preview:false,x:4.55,z:3.35,yaw:0,speed:1.08};
 // West: archive shelf + manual shutter mechanism.
 const objects=[
  {id:'door',label:'Служебная дверь',x:0,z:-4.36,r:2.05,model:'door',y:0,yaw:0},
- {id:'clock',label:'Настенные часы',x:-2.25,z:-4.34,r:1.85,model:'clock',y:2.23,yaw:0,scale:1},
- {id:'cabinet',label:'Кодовый шкаф обслуживания',x:4.55,z:-4.10,r:1.95,model:'cabinet',y:0,yaw:0},
- {id:'fusebox',label:'Электрощиток',x:5.82,z:-1.55,r:1.85,model:'fusebox',y:1.12,yaw:-Math.PI/2},
+ {id:'clock',label:'Настенные часы · 02:17',x:-2.25,z:-4.31,r:1.75,model:'clock',y:2.23,yaw:0,scale:1},
+ {id:'cabinet',label:'Кодовый шкаф обслуживания',x:4.55,z:-4.10,r:1.95,model:()=>flags.cabinet?'cabinetOpen':'cabinetClosed',y:0,yaw:0},
+ {id:'fuseItem',label:'Керамический предохранитель',x:4.55,z:-3.68,r:1.45,model:'fuse',y:.96,yaw:0,scale:1.05,hidden:()=>!flags.cabinet||flags.fuse||flags.fuseInserted||flags.circuit},
+ {id:'fusebox',label:'Электрощиток',x:5.79,z:-1.55,r:1.80,model:'fusebox',y:.72,yaw:-Math.PI/2},
  {id:'computer',label:'Терминал охраны',x:-3.0,z:3.03,r:1.75,imported:'computerScreen',y:.83,yaw:Math.PI,scale:2.25,tex:'metal_grid'},
- {id:'panel',label:'Панель аварийного доступа',x:5.82,z:.45,r:1.85,model:'symbolPanel',y:1.0,yaw:-Math.PI/2},
+ {id:'panel',label:'Панель аварийного доступа',x:5.79,z:.45,r:1.80,model:()=>flags.symbols?'symbolPanelOpen':'symbolPanel',y:.76,yaw:-Math.PI/2},
  {id:'radio',label:'Радио на архивной полке',x:-5.15,z:-.35,r:1.65,imported:'radio',y:.92,yaw:Math.PI/2,scale:2.45,tex:'metal_red'},
- {id:'crank',label:'Рукоятка из лотка',x:5.12,z:.45,r:1.55,model:'crank',y:.18,yaw:0,hidden:()=>!flags.symbols||flags.crank},
- {id:'shutter',label:'Механизм архивного отсека',x:-5.79,z:-2.45,r:1.75,model:'crankSocket',y:.72,yaw:Math.PI/2},
- {id:'key',label:'Ключ из скрытого отсека',x:-5.10,z:-2.42,r:1.55,model:'key',y:.12,yaw:0,hidden:()=>!flags.shutter||flags.key}
+ {id:'crank',label:'Сервисная рукоятка',x:5.18,z:.45,r:1.45,model:'crank',y:.96,yaw:-Math.PI/2,scale:1.0,hidden:()=>!flags.symbols||flags.crank},
+ {id:'shutter',label:'Ручной механизм архивного отсека',x:-5.77,z:-2.45,r:1.72,model:'crankSocket',y:.48,yaw:Math.PI/2},
+ {id:'key',label:'Латунный ключ',x:-5.55,z:-3.05,r:1.35,model:'key',y:.88,yaw:Math.PI/2,scale:1.1,hidden:()=>!flags.shutter||flags.key}
 ];
 const decor=[
- {imported:'desk',x:-3.0,y:0,z:3.35,yaw:0,scale:2.85,tex:'wood'},
- {imported:'chair',x:()=>chairX,y:0,z:2.32,yaw:Math.PI,scale:2.30,tex:'wood'},
+ {imported:'desk',x:-3.0,y:0,z:3.35,yaw:0,scale:2.85,tex:'old_wood'},
+ {imported:'chair',x:()=>chairX,y:0,z:2.32,yaw:Math.PI,scale:2.30,tex:'old_wood'},
  {model:'sofa',x:4.68,y:0,z:2.55,yaw:-Math.PI/2},
- {imported:'bookcaseOpen',x:-5.56,y:0,z:-.32,yaw:Math.PI/2,scale:2.35,tex:'wood'},
+ {imported:'bookcaseOpen',x:-5.56,y:0,z:-.32,yaw:Math.PI/2,scale:2.35,tex:'old_wood'},
  {imported:'lampRoundFloor',x:5.00,y:0,z:3.72,yaw:0,scale:1.55,tex:'metal_yellow'},
  {imported:'computerKeyboard',x:-3.10,y:.80,z:2.91,yaw:Math.PI,scale:2.15,tex:'rubber'},
  {imported:'computerMouse',x:-2.42,y:.81,z:2.93,yaw:Math.PI,scale:2.20,tex:'rubber'},
@@ -110,7 +111,7 @@ function moveActor(actor,dx,dz,r=.23,ignoreChair=false){
 }
 
 function compile(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s}
-function initGL(){if(gl)return;gl=canvas.getContext('webgl',{antialias:true,alpha:false,powerPreference:'high-performance'});if(!gl){alert('WebGL недоступен');return}const vs=`attribute vec3 aP;attribute vec3 aN;attribute vec2 aUV;uniform mat4 uM,uV,uP;varying vec3 vN;varying vec2 vUV;varying float vD;void main(){vec4 w=uM*vec4(aP,1.);vec4 e=uV*w;gl_Position=uP*e;vN=mat3(uM)*aN;vUV=aUV;vD=length(e.xyz);}`;const fs=`precision mediump float;varying vec3 vN;varying vec2 vUV;varying float vD;uniform vec3 uC;uniform float uUseTex;uniform sampler2D uTex;uniform vec2 uUVScale;uniform float uPower;void main(){vec3 n=normalize(vN);vec3 l=normalize(vec3(-.35,.82,.24));float diff=max(dot(n,l),0.);float amb=.18+uPower*.13;vec3 base=uC;if(uUseTex>.5)base*=texture2D(uTex,vUV*uUVScale).rgb;float light=amb+diff*(.26+uPower*.40);vec3 col=base*light;float fog=clamp((vD-4.)/13.,0.,.76);col=mix(col,vec3(.020,.023,.022),fog);gl_FragColor=vec4(col,1.);}`;program=gl.createProgram();gl.attachShader(program,compile(gl.VERTEX_SHADER,vs));gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fs));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));gl.useProgram(program);bufCube=meshBuffer(cubeMesh());bufCyl=meshBuffer(cylinderMesh(18));[['wall','wall.webp'],['floor','floor.webp'],['wood','wood.webp'],['metal','metal.webp'],['leather','leather.webp'],['fabric','fabric.webp'],['carpet','carpet.webp'],['tiles','tiles.webp'],['wall_yellow','wall_yellow.webp'],['ceiling','ceiling.webp'],['metal_yellow','metal_yellow.webp'],['metal_grid','metal_grid.webp'],['metal_red','metal_red.webp'],['cardboard','cardboard.webp'],['rubber','rubber.webp']].forEach(([n,u])=>loadTex(n,u));initImported();resize();addEventListener('resize',resize)}
+function initGL(){if(gl)return;gl=canvas.getContext('webgl',{antialias:true,alpha:false,powerPreference:'high-performance'});if(!gl){alert('WebGL недоступен');return}const vs=`attribute vec3 aP;attribute vec3 aN;attribute vec2 aUV;uniform mat4 uM,uV,uP;varying vec3 vN;varying vec2 vUV;varying float vD;void main(){vec4 w=uM*vec4(aP,1.);vec4 e=uV*w;gl_Position=uP*e;vN=mat3(uM)*aN;vUV=aUV;vD=length(e.xyz);}`;const fs=`precision mediump float;varying vec3 vN;varying vec2 vUV;varying float vD;uniform vec3 uC;uniform float uUseTex;uniform sampler2D uTex;uniform vec2 uUVScale;uniform float uPower;void main(){vec3 n=normalize(vN);vec3 l=normalize(vec3(-.35,.82,.24));float diff=max(dot(n,l),0.);float amb=.18+uPower*.13;vec3 base=uC;if(uUseTex>.5)base*=texture2D(uTex,vUV*uUVScale).rgb;float light=amb+diff*(.26+uPower*.40);vec3 col=base*light;float fog=clamp((vD-4.)/13.,0.,.76);col=mix(col,vec3(.020,.023,.022),fog);gl_FragColor=vec4(col,1.);}`;program=gl.createProgram();gl.attachShader(program,compile(gl.VERTEX_SHADER,vs));gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fs));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));gl.useProgram(program);bufCube=meshBuffer(cubeMesh());bufCyl=meshBuffer(cylinderMesh(18));[['wall','wall.webp'],['floor','floor.webp'],['wood','wood.webp'],['metal','metal.webp'],['leather','leather.webp'],['fabric','fabric.webp'],['carpet','carpet.webp'],['tiles','tiles.webp'],['wall_yellow','wall_yellow.webp'],['ceiling','ceiling.webp'],['metal_yellow','metal_yellow.webp'],['metal_grid','metal_grid.webp'],['metal_red','metal_red.webp'],['cardboard','cardboard.webp'],['rubber','rubber.webp'],['old_wood','old_wood.webp'],['shutter','shutter.webp']].forEach(([n,u])=>loadTex(n,u));initImported();resize();addEventListener('resize',resize)}
 function meshBuffer(m){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(m),gl.STATIC_DRAW);return {b,count:m.length/8}}
 function initImported(){if(!window.KENNEY_MESHES)return;for(const [name,data] of Object.entries(window.KENNEY_MESHES))importedBuffers[name]=meshBuffer(data)}
 function cubeMesh(){const V=[];const faces=[[[0,0,1],[[-.5,-.5,.5],[.5,-.5,.5],[.5,.5,.5],[-.5,.5,.5]]],[[0,0,-1],[[.5,-.5,-.5],[-.5,-.5,-.5],[-.5,.5,-.5],[.5,.5,-.5]]],[[1,0,0],[[.5,-.5,.5],[.5,-.5,-.5],[.5,.5,-.5],[.5,.5,.5]]],[[-1,0,0],[[-.5,-.5,-.5],[-.5,-.5,.5],[-.5,.5,.5],[-.5,.5,-.5]]],[[0,1,0],[[-.5,.5,.5],[.5,.5,.5],[.5,.5,-.5],[-.5,.5,-.5]]],[[0,-1,0],[[-.5,-.5,-.5],[.5,-.5,-.5],[.5,-.5,.5],[-.5,-.5,.5]]]];for(const [n,p] of faces){const uv=[[0,0],[1,0],[1,1],[0,1]],idx=[0,1,2,0,2,3];for(const i of idx)V.push(...p[i],...n,...uv[i])}return V}
@@ -124,9 +125,9 @@ function setUV(uv=[1,1]){gl.uniform2f(gl.getUniformLocation(program,'uUVScale'),
 function drawPart(part,base){const p=part.p||[0,0,0],d=part.d||[1,1,1],r=part.r||[0,0,0];let local=modelMat(p[0],p[1],p[2],r[1]||0,d[0],d[1],d[2],r);const mm=mul(base,local);gl.uniformMatrix4fv(gl.getUniformLocation(program,'uM'),false,mm);let col=part.c||[.5,.5,.5];const tm=performance.now();if(part.tag==='operatorScreen'){const n=.022+((Math.sin(tm*.061)+Math.sin(tm*.017))*0.5+1)*.010;col=[n,n*1.12,n*1.03]}else if(part.tag==='operatorStatic'){const n=.09+((Math.sin(tm*.089)+1)*.5)*.11;col=[n,n*1.10,n]}else if(part.tag==='operatorSensor'){const n=.68+((Math.sin(tm*.012)+1)*.5)*.28;col=[n,n,n*.92]}gl.uniform3fv(gl.getUniformLocation(program,'uC'),col);const texName=part.tex||'rubber',use=textures[texName];gl.uniform1f(gl.getUniformLocation(program,'uUseTex'),use?1:0);setUV(part.uv||[1,1]);if(use){gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,use);gl.uniform1i(gl.getUniformLocation(program,'uTex'),0)}const b=part.s==='cyl'?bufCyl:bufCube;bindBuf(b);gl.drawArrays(gl.TRIANGLES,0,b.count)}
 function drawModel(name,x,y,z,yaw=0,scale=1){const mod=LOCAL_MODELS[name];if(!mod)return;const base=modelMat(x,y,z,yaw,scale,scale,scale);for(const p of mod.parts)drawPart(p,base)}
 function drawImported(name,x,y,z,yaw=0,scale=1,tex='wood',color=[.78,.78,.74],uv=[1,1]){const b=importedBuffers[name];if(!b)return;const mm=modelMat(x,y,z,yaw,scale,scale,scale);gl.uniformMatrix4fv(gl.getUniformLocation(program,'uM'),false,mm);gl.uniform3fv(gl.getUniformLocation(program,'uC'),color);const use=textures[tex]||textures.rubber;gl.uniform1f(gl.getUniformLocation(program,'uUseTex'),use?1:0);setUV(uv);if(use){gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,use);gl.uniform1i(gl.getUniformLocation(program,'uTex'),0)}bindBuf(b);gl.drawArrays(gl.TRIANGLES,0,b.count)}
-function drawEntity(e){const x=typeof e.x==='function'?e.x():e.x;if(e.imported)drawImported(e.imported,x,e.y||0,e.z,e.yaw||0,e.scale||1,e.tex||'wood',e.color||[.78,.78,.74],e.uv||[1,1]);else drawModel(e.model,x,e.y||0,e.z,e.yaw||0,e.scale||1)}
+function drawEntity(e){const x=typeof e.x==='function'?e.x():e.x;const modelName=typeof e.model==='function'?e.model():e.model;if(e.imported)drawImported(e.imported,x,e.y||0,e.z,e.yaw||0,e.scale||1,e.tex||'wood',e.color||[.78,.78,.74],e.uv||[1,1]);else drawModel(modelName,x,e.y||0,e.z,e.yaw||0,e.scale||1)}
 function drawBox(x,y,z,w,h,d,c,tex='rubber',uv=[1,1]){drawPart({s:'box',p:[0,0,0],d:[w,h,d],c,tex,uv},modelMat(x,y,z,0))}
-function render(){gl.clearColor(.010,.012,.012,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.useProgram(program);const P=persp(67*Math.PI/180,canvas.width/canvas.height,.05,40);const V=mul(rx(-player.pitch),mul(ry(-player.yaw),tr(-player.x,-1.62,-player.z)));gl.uniformMatrix4fv(gl.getUniformLocation(program,'uP'),false,P);gl.uniformMatrix4fv(gl.getUniformLocation(program,'uV'),false,V);gl.uniform1f(gl.getUniformLocation(program,'uPower'),flags.powered?1:0);
+function render(){gl.clearColor(.010,.012,.012,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.useProgram(program);const P=persp(67*Math.PI/180,canvas.width/canvas.height,.05,40);const V=mul(rx(-player.pitch),mul(ry(player.yaw),tr(-player.x,-1.62,-player.z)));gl.uniformMatrix4fv(gl.getUniformLocation(program,'uP'),false,P);gl.uniformMatrix4fv(gl.getUniformLocation(program,'uV'),false,V);gl.uniform1f(gl.getUniformLocation(program,'uPower'),flags.powered?1:0);
  // Coherent employee-security room: worn cheerful materials over abandoned industrial infrastructure.
  drawBox(0,-.05,0,12,.10,9,[.98,.95,.86],'tiles',[6,4.5]);
  drawBox(0,3.22,0,12,.10,9,[.72,.73,.68],'ceiling',[6,4]);
@@ -153,13 +154,16 @@ function render(){gl.clearColor(.010,.012,.012,1);gl.clear(gl.COLOR_BUFFER_BIT|g
  for(const x of [-3.5,0,3.5]){drawBox(x,3.105,-.45,1.55,.075,.42,flags.powered?[1.40,1.35,1.13]:[.28,.28,.25],'ceiling',[1,1]);drawBox(x,3.07,-.45,1.72,.06,.55,[.62,.68,.63],'metal_grid',[1,1])}
  // props are deliberately zoned: security desk / lounge / archive / maintenance.
  for(const d of decor)drawEntity(d);for(const o of objects){if(o.hidden&&o.hidden())continue;drawEntity(o)}
+ // Story state is visible in the room, not only in UI overlays.
+ if(flags.fuseInserted||flags.circuit)drawModel('installedFuse',5.66,1.00,-1.55,-Math.PI/2,.78);
+ drawModel(flags.shutter?'compartmentOpen':'compartmentClosed',-5.72,.38,-3.05,Math.PI/2,.92);
  if(monster.active||monster.preview)drawModel('operator',monster.x,0,monster.z,monster.yaw,1.02);
  // door frame and service trim
  drawBox(0,2.55,-4.34,1.72,.10,.22,[.92,.78,.39],'metal_yellow',[1,1]);
  drawBox(-.79,1.30,-4.34,.10,2.58,.22,[.80,.82,.75],'metal_grid',[1,2]);
  drawBox(.79,1.30,-4.34,.10,2.58,.22,[.80,.82,.75],'metal_grid',[1,2]);
 }
-function step(dt){const sp=1.58,f=move.y,s=move.x;const dx=(Math.sin(player.yaw)*f+Math.cos(player.yaw)*s)*sp*dt,dz=(-Math.cos(player.yaw)*f+Math.sin(player.yaw)*s)*sp*dt;moveActor(player,dx,dz,.24,false);
+function step(dt){const lookK=1-Math.exp(-dt*22);player.yaw+=(lookTargetYaw-player.yaw)*lookK;player.pitch+=(lookTargetPitch-player.pitch)*lookK;const sp=1.58,f=move.y,s=move.x;const dx=(Math.sin(player.yaw)*f+Math.cos(player.yaw)*s)*sp*dt,dz=(-Math.cos(player.yaw)*f+Math.sin(player.yaw)*s)*sp*dt;moveActor(player,dx,dz,.24,false);
  if(monster.active){const mx=player.x-monster.x,mz=player.z-monster.z,d=Math.hypot(mx,mz)||1;monster.yaw=Math.atan2(mx,-mz);const base=Math.atan2(mz,mx),offs=[0,.48,-.48,.92,-.92,1.45,-1.45];let moved=false;for(const off of offs){const a=base+off,dxm=Math.cos(a)*monster.speed*dt,dzm=Math.sin(a)*monster.speed*dt;const ox=monster.x,oz=monster.z;moveActor(monster,dxm,dzm,.29,false);if(Math.hypot(monster.x-ox,monster.z-oz)>.001){moved=true;break}}if(d<.66)caughtPlayer()}}
 
 function updateFocus(){let best=null,score=1e9;for(const o of objects){if(o.hidden&&o.hidden())continue;const dx=o.x-player.x,dz=o.z-player.z,dist=Math.hypot(dx,dz);if(dist>o.r)continue;const ang=Math.atan2(dx,-dz);let d=ang-player.yaw;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;const sc=Math.abs(d)*2+dist*.12;if(Math.abs(d)<.42&&sc<score){best=o;score=sc}}current=best;$('#focusLabel').textContent=best?best.label:'';$('#focusLabel').classList.toggle('show',!!best);$('#actionBtn').classList.toggle('ready',!!best)}
@@ -169,45 +173,48 @@ function applySettings(){document.documentElement.style.setProperty('--uiScale',
 // ---------- game state ----------
 let objectiveIndex=-1;
 function objective(){
- let i=0,title='Откройте служебную дверь',detail='Осмотрите комнату и найдите способ снять блокировку.';
- if(flags.clock){i=1;title='Проверьте кодовый шкаф';detail='Часы остановились на 02:17. Возможно, это не случайность.'}
- if(flags.cabinet){i=2;title='Восстановите питание';detail='У вас есть предохранитель. Найдите электрощит.'}
- if(flags.circuit){i=3;title='Проверьте включившуюся технику';detail='После скачка питания ожил терминал охраны.'}
- if(flags.computer){i=4;title='Разблокируйте аварийную панель';detail='Терминал показал последовательность из трёх символов.'}
- if(flags.symbols){i=5;title='Заберите рукоятку';detail='Из панели выдвинулся небольшой сервисный лоток.'}
- if(flags.crank){i=6;title='Найдите механизм для рукоятки';detail='Проверьте архивную сторону комнаты.'}
- if(flags.shutter){i=7;title='Заберите ключ';detail='Рядом с архивной полкой открылся скрытый отсек.'}
- if(flags.key&&!monster.active){i=8;title='Откройте служебную дверь';detail='Ключ у вас. Возвращайтесь к выходу.'}
- if(monster.active){i=9;title='БЕГИТЕ К ДВЕРИ';detail='Оператор проснулся. Не дайте ему приблизиться.'}
+ let i=0,title='Откройте служебную дверь',detail='Осмотрите настоящие предметы комнаты и найдите способ снять блокировку.';
+ if(flags.clock){i=1;title='Проверьте кодовый шкаф';detail='Стрелки настенных часов застыли на 02:17.'}
+ if(flags.cabinet&&!flags.fuse&&!flags.fuseInserted&&!flags.circuit){i=2;title='Заберите предохранитель';detail='Шкаф открыт. Предохранитель лежит внутри на держателе.'}
+ if(flags.fuse&&!flags.fuseInserted){i=3;title='Установите предохранитель';detail='Найдите настоящий электрощит на технической стене.'}
+ if(flags.fuseInserted&&!flags.circuit){i=4;title='Замкните цепь';detail='Предохранитель установлен. Восстановите цепь внутри щита.'}
+ if(flags.circuit){i=5;title='Проверьте включившуюся технику';detail='После скачка питания ожил CRT-терминал охраны.'}
+ if(flags.computer){i=6;title='Разблокируйте аварийную панель';detail='Терминал показал последовательность из трёх символов.'}
+ if(flags.symbols&&!flags.crank){i=7;title='Заберите рукоятку';detail='Из панели физически выдвинулся сервисный лоток.'}
+ if(flags.crank){i=8;title='Найдите ручной механизм';detail='Рукоятка подходит к квадратному валу в архивной зоне.'}
+ if(flags.shutter&&!flags.key){i=9;title='Заберите ключ';detail='Открылся настоящий скрытый металлический отсек.'}
+ if(flags.key&&!monster.active){i=10;title='Откройте служебную дверь';detail='Ключ у вас. Возвращайтесь к выходу.'}
+ if(monster.active){i=11;title='БЕГИТЕ К ДВЕРИ';detail='Оператор проснулся. Не дайте ему приблизиться.'}
  setObj(i,title,detail)
 }
 function setObj(i,title,detail){const e=$('#objective');if(i!==objectiveIndex){objectiveIndex=i;e.classList.remove('updated');void e.offsetWidth;e.classList.add('updated')}e.innerHTML=`<span>ТЕКУЩАЯ ЦЕЛЬ</span><b>${title}</b><small>${detail}</small>`}
 function inv(){const a=[];if(flags.fuse&&!flags.circuit)a.push('ПРЕДОХРАНИТЕЛЬ');if(flags.crank&&!flags.shutter)a.push('РУКОЯТКА');if(flags.key)a.push('КЛЮЧ');$('#inventory').innerHTML=a.map(x=>`<span class="invItem">${x}</span>`).join('')}
 function toast(t,ms=1900){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.tm);toast.tm=setTimeout(()=>e.classList.remove('show'),ms)}
 function flash(op=.55,ms=90){const e=$('#flash');e.style.opacity=op;setTimeout(()=>e.style.opacity=0,ms)}
-function saveGame(){store.set(SAVE,JSON.stringify({flags,player:{x:player.x,z:player.z,yaw:player.yaw,pitch:player.pitch},chairX,v:5}));updateContinue()}
-function loadGame(){try{const s=JSON.parse(store.get(SAVE));if(!s)return false;flags={...flags0,...s.flags};Object.assign(player,s.player||{});chairX=s.chairX??-3.0;monster.active=false;monster.preview=false;objective();inv();return true}catch{return false}}
-function resetGame(){flags={...flags0};Object.assign(player,{x:0,z:2.55,yaw:0,pitch:0});chairX=-3.0;chairMoved=false;monster.active=false;monster.preview=false;monster.x=4.55;monster.z=3.35;objective();inv()}
+function saveGame(){store.set(SAVE,JSON.stringify({flags,player:{x:player.x,z:player.z,yaw:player.yaw,pitch:player.pitch},chairX,v:6}));updateContinue()}
+function loadGame(){try{const s=JSON.parse(store.get(SAVE));if(!s)return false;flags={...flags0,...s.flags};Object.assign(player,s.player||{});chairX=s.chairX??-3.0;syncLookTarget();monster.active=false;monster.preview=false;objective();inv();return true}catch{return false}}
+function resetGame(){flags={...flags0};Object.assign(player,{x:0,z:2.55,yaw:0,pitch:0});syncLookTarget();chairX=-3.0;chairMoved=false;monster.active=false;monster.preview=false;monster.x=4.55;monster.z=3.35;objective();inv()}
 function start(cont){initGL();show('game');running=true;paused=true;if(cont&&!loadGame())resetGame();else if(!cont)resetGame();$('#introOverlay').classList.toggle('hidden',cont);$('#pauseOverlay').classList.add('hidden');$('#endingOverlay').classList.add('hidden');$('#caughtOverlay').classList.add('hidden');if(cont){paused=false;last=performance.now();requestAnimationFrame(loop)}}
 $('#newGameBtn').onclick=()=>start(false);$('#continueBtn').onclick=()=>start(true);$('#enterRoomBtn').onclick=()=>{audio();$('#introOverlay').classList.add('hidden');paused=false;last=performance.now();toast('ЦЕЛЬ ОБНОВЛЕНА: откройте служебную дверь.',1900);objective();requestAnimationFrame(loop)};
 $('#pauseBtn').onclick=()=>{if(!running)return;paused=true;move.x=move.y=0;resetStick();$('#pauseOverlay').classList.remove('hidden')};$('#resumeBtn').onclick=()=>{$('#pauseOverlay').classList.add('hidden');paused=false;last=performance.now();requestAnimationFrame(loop)};$('#pauseSettingsBtn').onclick=()=>{$('#pauseOverlay').classList.add('hidden');settingsReturn='game';show('settings')};$('#exitBtn').onclick=()=>{saveGame();running=false;show('menu');$('#pauseOverlay').classList.add('hidden')};
 
 function interact(){if(!current||paused)return;audio();tone(260,.045,.05);const id=current.id;
- if(id==='clock'){flags.clock=true;toast('Часы остановились на 02:17.',2500);objective();saveGame();setTimeout(()=>{flash(.18,60);tone(70,.09,.16,'triangle')},700)}
- else if(id==='cabinet'){if(flags.cabinet){toast('Шкафчик уже открыт.');return}openKeypad()}
- else if(id==='fusebox'){if(!flags.fuse&&!flags.circuit){toast('Внутри пустое гнездо для предохранителя.');return}if(flags.circuit){toast('Цепь работает.');return}openCircuit()}
+ if(id==='clock'){flags.clock=true;toast('Стрелки часов неподвижны: 02:17.',2500);objective();saveGame();setTimeout(()=>{flash(.18,60);tone(70,.09,.16,'triangle')},700)}
+ else if(id==='cabinet'){if(flags.cabinet){toast('Дверца шкафа открыта. Предохранитель лежит внутри.');return}openKeypad()}
+ else if(id==='fuseItem'){flags.fuse=true;inv();objective();toast('Вы забрали керамический предохранитель.',2200);tone(410,.08,.08,'triangle');saveGame()}
+ else if(id==='fusebox'){if(flags.circuit){toast('Щит работает. Предохранитель на месте.');return}if(!flags.fuseInserted){if(!flags.fuse){toast('Пустое гнездо. Нужен предохранитель.');return}flags.fuse=false;flags.fuseInserted=true;inv();objective();toast('Предохранитель установлен в держатель.',1400);tone(360,.08,.08,'triangle');saveGame();setTimeout(()=>openCircuit(),380);return}openCircuit()}
  else if(id==='computer'){if(!flags.powered){toast('Нет питания.');return}openComputer()}
  else if(id==='panel'){if(!flags.computer){toast('Три кнопки. Но порядок неизвестен.');return}openSymbols()}
  else if(id==='radio'){if(!flags.powered){toast('Радио молчит.');return}flags.radio=true;toast('91.3 МГц: «НЕ ОТКРЫВАЙТЕ ДВЕРЬ ПОСЛЕ 02:17»',3400);tone(91,.30,.12,'sawtooth');setTimeout(()=>tone(480,.05,.05,'square'),340);saveGame()}
  else if(id==='crank'){flags.crank=true;inv();objective();toast('Вы взяли тяжёлую рукоятку.',2100);tone(410,.10,.09,'triangle');saveGame()}
- else if(id==='shutter'){if(!flags.crank&&!flags.shutter){toast('Квадратный вал. Здесь не хватает рукоятки.');return}if(flags.shutter){toast('Механизм уже открыт.');return}flags.shutter=true;flags.crank=false;inv();objective();scrape();flash(.28,80);toast('За книжным шкафом открылся узкий отсек.',2600);saveGame()}
+ else if(id==='shutter'){if(!flags.crank&&!flags.shutter){toast('Квадратный вал. Здесь не хватает рукоятки.');return}if(flags.shutter){toast('Механизм уже открыт.');return}flags.shutter=true;flags.crank=false;inv();objective();scrape();flash(.28,80);toast('Металлическая заслонка поднялась. Внутри виден ключ.',2600);saveGame()}
  else if(id==='key'){flags.key=true;inv();toast('Вы подняли ключ.');tone(460,.12,.10,'triangle');startChase();saveGame()}
  else if(id==='door'){if(!flags.key){toast('Заперто.');tone(78,.11,.16,'triangle');return}finish()}}
 $('#actionBtn').addEventListener('pointerdown',e=>{e.preventDefault();interact()});
 
 // keypad
 let code='';function openKeypad(){paused=true;code='';updCode();$('#keypadOverlay').classList.remove('hidden')}function updCode(){$('#keypadDisplay').textContent=(code+'––––').slice(0,4)}function closeModal(id){$(id).classList.add('hidden');paused=false;last=performance.now();requestAnimationFrame(loop)}
-const kg=$('#keypadGrid');['1','2','3','4','5','6','7','8','9','⌫','0','OK'].forEach(n=>{const b=document.createElement('button');b.textContent=n;b.onpointerdown=e=>{e.preventDefault();audio();tone(300,.04,.04);if(n==='⌫')code=code.slice(0,-1);else if(n==='OK'){if(code==='0217'){flags.cabinet=true;flags.fuse=true;inv();objective();flash(.24,80);toast('Внутри лежит предохранитель.',2200);saveGame();closeModal('#keypadOverlay')}else{code='';flash(.35,60);toast('Неверный код.')}}else if(code.length<4)code+=n;updCode()};kg.appendChild(b)});$('#keypadClose').onclick=()=>closeModal('#keypadOverlay');
+const kg=$('#keypadGrid');['1','2','3','4','5','6','7','8','9','⌫','0','OK'].forEach(n=>{const b=document.createElement('button');b.textContent=n;b.onpointerdown=e=>{e.preventDefault();audio();tone(300,.04,.04);if(n==='⌫')code=code.slice(0,-1);else if(n==='OK'){if(code==='0217'){flags.cabinet=true;inv();objective();flash(.24,80);toast('Замок щёлкнул. Дверца шкафа открылась.',2200);saveGame();closeModal('#keypadOverlay')}else{code='';flash(.35,60);toast('Неверный код.')}}else if(code.length<4)code+=n;updCode()};kg.appendChild(b)});$('#keypadClose').onclick=()=>closeModal('#keypadOverlay');
 
 // 4x4 touch circuit: reach OUT while passing both relay contacts.
 const gridN=4, blockedNodes=new Set([3,4,7,8,12]), relayNodes=new Set([5,10]);let path=[];const cb=$('#circuitBoard');cb.style.gridTemplateColumns='repeat(4,1fr)';for(let i=0;i<16;i++){const n=document.createElement('div');n.className='cnode'+(blockedNodes.has(i)?' blocked':' active')+(i===0?' start':'')+(i===15?' end':'')+(relayNodes.has(i)?' relay':'');n.dataset.i=i;n.textContent=blockedNodes.has(i)?'×':relayNodes.has(i)?'⚡':'●';cb.appendChild(n)}
@@ -215,31 +222,36 @@ function drawCircuit(){$$('.cnode').forEach(n=>n.classList.toggle('path',path.in
 function near(a,b){const ax=a%gridN,ay=Math.floor(a/gridN),bx=b%gridN,by=Math.floor(b/gridN);return Math.abs(ax-bx)+Math.abs(ay-by)===1}
 function addNode(i){if(blockedNodes.has(i))return;if(path.length===0){if(i!==0)return;path=[0]}else{const last=path[path.length-1];if(i===last)return;if(!near(last,i)||path.includes(i))return;path.push(i)}drawCircuit();if(path[path.length-1]===15){if([...relayNodes].every(r=>path.includes(r))){setTimeout(circuitWin,180)}else{$('#circuitStatus').textContent='Цепь дошла до OUT, но одно из реле не запитано.';tone(92,.13,.16,'triangle')}}}
 let circuitDown=false;cb.addEventListener('pointerdown',e=>{e.preventDefault();circuitDown=true;path=[];const n=e.target.closest('.cnode');if(n)addNode(+n.dataset.i);cb.setPointerCapture?.(e.pointerId)});cb.addEventListener('pointermove',e=>{if(!circuitDown)return;const el=document.elementFromPoint(e.clientX,e.clientY)?.closest?.('.cnode');if(el)addNode(+el.dataset.i)});cb.addEventListener('pointerup',()=>circuitDown=false);$('#circuitReset').onclick=()=>{path=[];drawCircuit()};
-function openCircuit(){paused=true;path=[];drawCircuit();$('#circuitOverlay').classList.remove('hidden')};$('#circuitClose').onclick=()=>closeModal('#circuitOverlay');function circuitWin(){flags.circuit=true;flags.fuse=false;flags.powered=true;inv();objective();$('#circuitOverlay').classList.add('hidden');flash(.7,80);setTimeout(()=>flash(.42,70),170);setTimeout(()=>flash(.28,60),360);tone(55,.22,.20,'triangle');setTimeout(()=>tone(840,.08,.07,'square'),480);toast('Электричество вернулось.',2200);monster.preview=true;monster.x=2.75;monster.z=-3.35;monster.yaw=Math.PI;setTimeout(()=>{if(monster.preview){flash(.60,80);monster.preview=false;tone(48,.22,.20,'triangle')}},1250);saveGame();paused=false;last=performance.now();requestAnimationFrame(loop)}
+function openCircuit(){paused=true;path=[];drawCircuit();$('#circuitOverlay').classList.remove('hidden')};$('#circuitClose').onclick=()=>closeModal('#circuitOverlay');function circuitWin(){flags.circuit=true;flags.fuse=false;flags.fuseInserted=true;flags.powered=true;inv();objective();$('#circuitOverlay').classList.add('hidden');flash(.7,80);setTimeout(()=>flash(.42,70),170);setTimeout(()=>flash(.28,60),360);tone(55,.22,.20,'triangle');setTimeout(()=>tone(840,.08,.07,'square'),480);toast('Электричество вернулось.',2200);monster.preview=true;monster.x=2.75;monster.z=-3.35;monster.yaw=Math.PI;setTimeout(()=>{if(monster.preview){flash(.60,80);monster.preview=false;tone(48,.22,.20,'triangle')}},1250);saveGame();paused=false;last=performance.now();requestAnimationFrame(loop)}
 
 function openComputer(){paused=true;$('#computerOverlay').classList.remove('hidden');tone(720,.05,.04,'square');setTimeout(()=>tone(860,.05,.04,'square'),90)}$('#computerClose').onclick=()=>{if(!flags.computer){flags.computer=true;chairX=-2.35;chairMoved=true;scrape();setTimeout(knock,430);toast('За спиной сдвинулся стул.',2200);objective();saveGame()}closeModal('#computerOverlay')};
 
 let seq=[];const wanted=['circle','triangle','square'];function updSeq(){$('#symbolInput').textContent=(seq.map(s=>s==='circle'?'○':s==='triangle'?'△':'□').join(' ')+' · · ·').split(' ').slice(0,3).join(' ')}function openSymbols(){paused=true;seq=[];updSeq();$('#symbolOverlay').classList.remove('hidden')}$$('[data-symbol]').forEach(b=>b.onpointerdown=e=>{e.preventDefault();if(seq.length>=3)return;seq.push(b.dataset.symbol);tone(380+seq.length*80,.06,.07,'triangle');updSeq();if(seq.length===3)setTimeout(()=>{if(seq.every((x,i)=>x===wanted[i])){flags.symbols=true;objective();flash(.38,70);toast('Панель отщёлкнула маленький металлический лоток.',2400);tone(130,.16,.14,'triangle');saveGame();closeModal('#symbolOverlay')}else{seq=[];updSeq();flash(.25,60);toast('Последовательность сброшена.')}},180)});$('#symbolReset').onclick=()=>{seq=[];updSeq()};$('#symbolClose').onclick=()=>closeModal('#symbolOverlay');
 function startChase(){monster.active=true;monster.preview=false;monster.x=4.35;monster.z=3.30;monster.speed=1.08;knock();setTimeout(scrape,220);flash(.65,90);toast('БЕГИТЕ К ДВЕРИ.',2000);objective()}
 function caughtPlayer(){if(paused||!monster.active)return;monster.active=false;paused=true;move.x=move.y=0;resetStick();flash(.82,120);tone(46,.45,.30,'sawtooth');setTimeout(()=>$('#caughtOverlay').classList.remove('hidden'),160)}
-$('#caughtRetryBtn').onclick=()=>{$('#caughtOverlay').classList.add('hidden');player.x=-4.85;player.z=-2.25;player.yaw=.95;monster.x=4.35;monster.z=3.30;monster.active=true;paused=false;last=performance.now();toast('БЕГИТЕ.',1300);objective();requestAnimationFrame(loop)};
+$('#caughtRetryBtn').onclick=()=>{$('#caughtOverlay').classList.add('hidden');player.x=-4.85;player.z=-2.25;player.yaw=.95;player.pitch=0;syncLookTarget();monster.x=4.35;monster.z=3.30;monster.active=true;paused=false;last=performance.now();toast('БЕГИТЕ.',1300);objective();requestAnimationFrame(loop)};
 function finish(){flags.ended=true;monster.active=false;paused=true;flash(.85,140);setTimeout(()=>$('#endingOverlay').classList.remove('hidden'),260);store.remove(SAVE);updateContinue()}$('#endingMenuBtn').onclick=()=>{running=false;$('#endingOverlay').classList.add('hidden');show('menu')};
 
 // ---------- iOS touch controls only ----------
-// Floating left stick: the control appears under the thumb instead of snapping movement
-// toward a fixed bottom-left origin. Natural camera: swipe up = look up, right = look right.
+// v1.2: pointer-captured controls + corrected camera matrix.
+// Same finger distance gives the same rotation; small movement around the stick center is ignored.
 let stickId=null,stickOrigin={x:0,y:0};const stick=$('#stick'),knob=$('#stickKnob'),lz=$('#leftZone');
-function placeStick(x,y){const size=104,pad=10;const zone=lz.getBoundingClientRect();const minX=zone.left+size/2+pad,maxX=zone.right-size/2-pad;const minY=zone.top+size/2+pad,maxY=zone.bottom-size/2-pad;const cx=clamp(x,minX,maxX),cy=clamp(y,minY,maxY);const s=settings.uiScale||1,localX=innerWidth/2+(cx-innerWidth/2)/s,localY=innerHeight/2+(cy-innerHeight/2)/s;stick.style.left=`${localX-size/2}px`;stick.style.top=`${localY-size/2}px`;stick.style.bottom='auto';stick.classList.add('floating');stickOrigin={x:cx,y:cy}}
+function placeStick(x,y){const size=104,pad=10,zone=lz.getBoundingClientRect();const minX=zone.left+size/2+pad,maxX=zone.right-size/2-pad,minY=zone.top+size/2+pad,maxY=zone.bottom-size/2-pad;const cx=clamp(x,minX,maxX),cy=clamp(y,minY,maxY);const s=settings.uiScale||1,localX=innerWidth/2+(cx-innerWidth/2)/s,localY=innerHeight/2+(cy-innerHeight/2)/s;stick.style.left=`${localX-size/2}px`;stick.style.top=`${localY-size/2}px`;stick.style.bottom='auto';stick.classList.add('floating');stickOrigin={x:cx,y:cy}}
 function resetStick(){stickId=null;move.x=move.y=0;knob.style.transform='translate(-50%,-50%)';stick.classList.remove('active')}
-function joy(t){const dx=t.clientX-stickOrigin.x,dy=t.clientY-stickOrigin.y,m=38,l=Math.hypot(dx,dy)||1,k=Math.min(1,m/l),x=dx*k,y=dy*k;knob.style.transform=`translate(calc(-50% + ${x}px),calc(-50% + ${y}px))`;move.x=clamp(dx/m,-1,1);move.y=clamp(-dy/m,-1,1)}
-lz.addEventListener('touchstart',e=>{if(paused||stickId!==null)return;const t=e.changedTouches[0];stickId=t.identifier;placeStick(t.clientX,t.clientY);stick.classList.add('active');knob.style.transform='translate(-50%,-50%)';e.preventDefault()},{passive:false});
-lz.addEventListener('touchmove',e=>{for(const t of e.changedTouches)if(t.identifier===stickId)joy(t);e.preventDefault()},{passive:false});
-const finishStick=e=>{for(const t of e.changedTouches)if(t.identifier===stickId)resetStick();e.preventDefault()};
-lz.addEventListener('touchend',finishStick,{passive:false});lz.addEventListener('touchcancel',finishStick,{passive:false});
-let lookId=null,lx=0,ly=0;const lookZoneEl=$('#lookZone');lookZoneEl.addEventListener('touchstart',e=>{if(paused||lookId!==null)return;const t=e.changedTouches[0];lookId=t.identifier;lx=t.clientX;ly=t.clientY;e.preventDefault()},{passive:false});lookZoneEl.addEventListener('touchmove',e=>{for(const t of e.changedTouches)if(t.identifier===lookId){const dx=t.clientX-lx,dy=t.clientY-ly;lx=t.clientX;ly=t.clientY;player.yaw+=dx*.0040*settings.sensitivity;player.pitch=clamp(player.pitch-dy*.0034*settings.sensitivity,-.72,.72)}e.preventDefault()},{passive:false});const finishLook=e=>{lookId=null;e.preventDefault()};lookZoneEl.addEventListener('touchend',finishLook,{passive:false});lookZoneEl.addEventListener('touchcancel',finishLook,{passive:false});
+function joyPoint(x,y){const dx=x-stickOrigin.x,dy=y-stickOrigin.y,max=42,dead=7,len=Math.hypot(dx,dy);if(len<dead){move.x=move.y=0;knob.style.transform='translate(-50%,-50%)';return}const vis=Math.min(max,len),nx=dx/len,ny=dy/len,strength=clamp((len-dead)/(max-dead),0,1);knob.style.transform=`translate(calc(-50% + ${nx*vis}px),calc(-50% + ${ny*vis}px))`;move.x=nx*strength;move.y=-ny*strength}
+lz.addEventListener('pointerdown',e=>{if(paused||stickId!==null||e.pointerType==='mouse')return;stickId=e.pointerId;placeStick(e.clientX,e.clientY);stick.classList.add('active');lz.setPointerCapture?.(e.pointerId);e.preventDefault()},{passive:false});
+lz.addEventListener('pointermove',e=>{if(e.pointerId!==stickId)return;joyPoint(e.clientX,e.clientY);e.preventDefault()},{passive:false});
+function endStick(e){if(e.pointerId!==stickId)return;resetStick();e.preventDefault()}
+lz.addEventListener('pointerup',endStick,{passive:false});lz.addEventListener('pointercancel',endStick,{passive:false});
+
+let lookId=null,lx=0,ly=0;const lookZoneEl=$('#lookZone');
+lookZoneEl.addEventListener('pointerdown',e=>{if(paused||lookId!==null||e.pointerType==='mouse')return;lookId=e.pointerId;lx=e.clientX;ly=e.clientY;lookTargetYaw=player.yaw;lookTargetPitch=player.pitch;lookZoneEl.setPointerCapture?.(e.pointerId);e.preventDefault()},{passive:false});
+lookZoneEl.addEventListener('pointermove',e=>{if(e.pointerId!==lookId)return;let dx=clamp(e.clientX-lx,-42,42),dy=clamp(e.clientY-ly,-42,42);lx=e.clientX;ly=e.clientY;if(Math.abs(dx)<.35)dx=0;if(Math.abs(dy)<.35)dy=0;const sx=3.15/Math.max(innerWidth,640),sy=2.20/Math.max(innerHeight,320);lookTargetYaw+=dx*sx*settings.sensitivity;lookTargetPitch=clamp(lookTargetPitch-dy*sy*settings.sensitivity,-.72,.72);e.preventDefault()},{passive:false});
+function endLook(e){if(e.pointerId!==lookId)return;lookId=null;e.preventDefault()}
+lookZoneEl.addEventListener('pointerup',endLook,{passive:false});lookZoneEl.addEventListener('pointercancel',endLook,{passive:false});
 
 applySettings();updateContinue();
 if('serviceWorker' in navigator && location.protocol!=='file:'){navigator.serviceWorker.register('./sw.js').catch(()=>{});}
 // tiny public test surface; no cheats exposed in normal UI
-window.AFTER0217_DIAGNOSTICS={version:'1.1',chapter:'Chapter 1: The Room',puzzlePath:['clock 02:17','cabinet 0217','circuit','CRT ○△□','symbol panel','crank','mechanism','key','Operator chase','door'],offlineRuntime:true,importedKenneyModels:Object.keys(window.KENNEY_MESHES||{})};
+window.AFTER0217_DIAGNOSTICS={version:'1.2',chapter:'Chapter 1: The Room',puzzlePath:['clock 02:17','cabinet 0217','physical fuse pickup','install fuse','circuit','CRT ○△□','symbol panel','crank','mechanism','key','Operator chase','door'],offlineRuntime:true,importedKenneyModels:Object.keys(window.KENNEY_MESHES||{})};
 })();

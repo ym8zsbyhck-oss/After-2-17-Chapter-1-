@@ -1,4 +1,4 @@
-# AFTER 02:17 — Chapter 1 v1.1 — Assets and licenses
+# AFTER 02:17 — Chapter 1 v1.2 — Assets and licenses
 
 ## Material rule for v1.1
 
@@ -52,3 +52,13 @@ Puzzle hardware and the creature **The Operator / Оператор** are origina
 ## Main-menu font
 
 Rubik Glitch is loaded from Google Fonts as a webfont. No font binary is bundled in the project archive.
+
+
+## New v1.2 CC0 materials
+
+- `old_wood.webp` — Weathered Brown Planks — https://polyhaven.com/a/weathered_brown_planks — used on the old security desk/chair/archive furniture.
+- `shutter.webp` — Rusty Metal Shutter — https://polyhaven.com/a/rusty_metal_shutter — used on the physical archive shutter/hidden compartment.
+
+## v1.2 physical story geometry
+
+The wall clock, locker/keypad, fuse, fusebox internals, symbol panel/tray, crank, archive mechanism/compartment, key and service door are purpose-built compound 3D geometry for this game. They are not placeholder cubes used as stand-ins: each prop has visible functional parts corresponding to the story interaction. Their surfaces use the local CC0 materials documented above.
