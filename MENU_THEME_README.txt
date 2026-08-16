@@ -1,4 +1,6 @@
-AFTER 02:17 — Chapter 1 v1.0
+AFTER 02:17 — Chapter 1 v1.1
 
-menu_theme.mp3 is included in this build as the looping main-menu background track.
-menu_click.mp3 remains the separate menu selection/click sound.
+menu_theme.mp3 — фоновая музыка главного меню, предоставленная пользователем.
+menu_click.mp3 — отдельный звук выбора/касания пункта меню, предоставленный пользователем.
+
+Оба файла лежат в корне GitHub Flat-сборки и кэшируются Service Worker.

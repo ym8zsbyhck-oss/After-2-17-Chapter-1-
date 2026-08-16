@@ -1,68 +1,54 @@
-# AFTER 02:17 — Chapter 1 v4 — Assets and licenses
+# AFTER 02:17 — Chapter 1 v1.1 — Assets and licenses
 
-## Rule for this build
+## Material rule for v1.1
 
-There are **no hand-drawn / AI-generated bitmap material textures** in the 3D environment.
-All bitmap material textures shipped in `` are optimized local copies of CC0 materials sourced from Poly Haven.
-Some small shader/model details use plain material colors; those are not bitmap textures.
+Every visible 3D surface category uses a local bitmap material texture. The project does not use hand-drawn or AI-generated bitmap material textures for the room. Small CRT scanlines/light fluctuations are procedural shader effects layered over textured surfaces.
+
+All new environment textures below are local, mobile-optimized copies of CC0 assets from Poly Haven.
 
 ## Poly Haven CC0 textures included locally
 
-- `wall.webp` — Painted Plaster Wall — https://polyhaven.com/a/painted_plaster_wall
-- `floor.webp` — Concrete Floor 02 — https://polyhaven.com/a/concrete_floor_02
-- `wood.webp` — Wood Table 001 — https://polyhaven.com/a/wood_table_001
-- `metal.webp` — Green Metal Rust — https://polyhaven.com/a/green_metal_rust
-- `leather.webp` — Brown Leather — https://polyhaven.com/a/brown_leather
-- `carpet.webp` — Dirty Carpet — https://polyhaven.com/a/dirty_carpet
+- `wall_yellow.webp` — Yellow Plaster — https://polyhaven.com/a/yellow_plaster — worn warm wall plaster.
+- `ceiling.webp` — Grey Plaster — https://polyhaven.com/a/grey_plaster — ceiling/plaster surfaces.
+- `tiles.webp` — Interior Tiles — https://polyhaven.com/a/interior_tiles — main room floor.
+- `metal_grid.webp` — Rusty Metal Grid — https://polyhaven.com/a/rusty_metal_grid — turquoise industrial wainscot, service panels and CRT shell.
+- `metal_yellow.webp` — Rusty Metal 03 — https://polyhaven.com/a/rusty_metal_03 — yellow safety metal / lamp / trim.
+- `metal_red.webp` — Rusty Painted Metal — https://polyhaven.com/a/rusty_painted_metal — red safety accents / radio casing.
+- `cardboard.webp` — Cardboard Box 01 diffuse — https://polyhaven.com/a/cardboard_box_01 — storage boxes.
+- `rubber.webp` — Rubber Tiles — https://polyhaven.com/a/rubber_tiles — dark rubber/plastic-like small hardware, keyboard/mouse and screen backing.
+- `wood.webp` — Wood Table 001 — https://polyhaven.com/a/wood_table_001 — desk, chair, archive shelf and door.
+- `metal.webp` — Green Metal Rust — https://polyhaven.com/a/green_metal_rust — Operator mask / general aged metal.
+- `leather.webp` — Brown Leather — https://polyhaven.com/a/brown_leather — sofa upholstery.
+- `fabric.webp` — Cotton Jersey — https://polyhaven.com/a/cotton_jersey — Operator work coverall.
+- `carpet.webp` — Dirty Carpet — https://polyhaven.com/a/dirty_carpet — waiting-area rug.
 
-Poly Haven publishes its assets under CC0.
+Legacy `wall.webp` and `floor.webp` remain in the flat package for save/cache compatibility, but v1.1's main room surfaces use the new material set above.
 
 ## Kenney Furniture Kit — CC0 models included locally
 
-Official asset page:
-https://kenney.nl/assets/furniture-kit
+Official asset page: https://kenney.nl/assets/furniture-kit
 
-The following source OBJ files are physically included in:
-``
+Local OBJ sources included in the flat project:
+- `chair.obj`
+- `desk.obj`
+- `computerScreen.obj`
+- `bookcaseOpen.obj`
+- `radio.obj`
+- `computerKeyboard.obj`
+- `computerMouse.obj`
+- `lampRoundFloor.obj`
 
-- chair.obj
-- desk.obj
-- computerScreen.obj
-- bookcaseOpen.obj
-- radio.obj
-- computerKeyboard.obj
-- computerMouse.obj
-- lampRoundFloor.obj
-
-The project also contains `kenney_meshes.js`, generated directly from those bundled OBJ files so the custom WebGL renderer can use the meshes without an external loader/CDN.
-
-The OBJ copies used during assembly came from a public GitHub mirror of Kenney's kit:
-https://github.com/ETdoFresh/kenney.nl/tree/master/furniturekit_updated/Models/OBJ%20format
+`kenney_meshes.js` contains WebGL-ready mesh data generated from those bundled OBJ files.
 
 ## Original geometry
 
-The interactable puzzle hardware and the Chapter 1 creature **The Operator / Оператор** are original compound geometry made for this prototype. Their visible surface bitmap textures use the imported Poly Haven materials above.
+Puzzle hardware and the creature **The Operator / Оператор** are original compound geometry for AFTER 02:17. Their visible surfaces use the CC0 texture library above.
 
-No external network asset is required while playing.
+## Audio
 
-
-## Operator workwear fabric
-- Asset: **Cotton Jersey**
-- Source: Poly Haven (`cotton_jersey`)
-- License: **CC0**
-- Local optimized file: `fabric.webp`
-- Use: Operator work coverall (tinted by the WebGL material color; source bitmap is not redrawn).
-
-## Main-menu UI audio
-- Local file: `menu_click.mp3`
-- Source: audio file supplied directly by the user for this project.
-- Use: section/button taps in the main menu and return buttons to the main menu.
-
+- `menu_click.mp3` — file supplied directly by the user; menu selection/tap sound.
+- `menu_theme.mp3` — file supplied directly by the user; looping main-menu theme. Rights/redistribution responsibility remains with the file owner.
 
 ## Main-menu font
 
-- Rubik Glitch — Google Fonts / open-source font. Loaded as a webfont; the font binary is not bundled in this project archive.
-
-## Main-menu music
-
-- `menu_theme.mp3` is not bundled in this archive. The project only contains the playback slot/logic. Add only an audio file you have permission to use/distribute.
+Rubik Glitch is loaded from Google Fonts as a webfont. No font binary is bundled in the project archive.

@@ -1,17 +1,25 @@
-# Chapter 1 puzzle target
+# AFTER 02:17 — Chapter 1 v1.1: Puzzle / Level Design
 
-The design goal is roughly the complexity/rhythm of an early Poppy Playtime Chapter 1-style short chapter, without copying its puzzles or GrabPack mechanic.
+## Цель обновления
+Сохранить компактную первую главу, но приблизить её ритм к раннему factory-horror: понятная текущая цель, исследование помещения, наблюдение, физическое touch-действие, перенос информации, применение предмета и короткая погоня.
 
-## What v4 changes over v3
-- Adds a second physical item-transfer step: symbol panel -> crank -> wall mechanism.
-- Adds a non-required radio lore interaction.
-- Adds The Operator as an escalating threat.
-- First monster sight happens after power restoration.
-- Taking the final key starts a short real-time pursuit.
-- Imported Kenney furniture makes the room less like a blockout.
-- Adds imported CC0 metal, leather and carpet materials.
+## Текущая цепочка
+1. Откройте служебную дверь — игрок понимает, что дверь заблокирована, и исследует комнату.
+2. Часы 02:17 дают наблюдаемую подсказку к кодовому шкафу.
+3. В шкафу находится предохранитель.
+4. После установки предохранителя нужно решить 4×4 touch-схему и обязательно запитать оба контакта ⚡.
+5. Включается CRT; терминал даёт последовательность символов.
+6. Символы переносятся на отдельную аварийную панель на другой стене.
+7. Панель выдаёт рукоятку.
+8. Рукоятку нужно применить к отдельному механизму скрытого отсека.
+9. В отсеке — ключ от служебной двери.
+10. Взятие ключа запускает погоню Оператора и цель меняется на «БЕГИТЕ К ДВЕРИ».
 
-## Difficulty curve
-Observation -> deduction -> touch logic -> memory/information transfer -> item application -> chase.
-
-The chapter stays small enough for a phone session but no longer resolves after one code and one key.
+## Что исправлено в v1.1
+- Планировка собрана как одна правдоподобная комната охраны/отдыха, а не случайный набор объектов.
+- Мебель и стены имеют коллизии.
+- Оператор тоже учитывает препятствия и пытается выбрать альтернативное направление.
+- Камера на iOS больше не инвертирована: свайп вверх = взгляд вверх, вправо = поворот вправо.
+- Текущая цель имеет заголовок, пояснение и визуально обновляется при каждом шаге.
+- Электрическая задача стала 4×4 и требует двух реле вместо почти очевидного маршрута 3×3.
+- Цветом и освещением обозначены функциональные зоны, но решения не подсвечиваются стрелками.
